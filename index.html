@@ -12,7 +12,6 @@
         .header-content { display: flex; align-items: center; justify-content: space-between; }
         .logo-box { display: flex; align-items: center; gap: 12px; }
         
-        /* Contenedor adaptado fiel al logo oficial */
         .logo-emblem { width: 44px; height: 44px; background: #0A2540; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 2px 8px rgba(10,37,64,0.15); }
         .logo-text h1 { font-size: 16px; font-weight: 700; color: #0A2540; letter-spacing: 0.5px; }
         .logo-text p { font-size: 11px; color: #8E8E93; }
@@ -71,15 +70,11 @@
         <div class="container header-content">
             <div class="logo-box">
                 <div class="logo-emblem">
-                    <!-- Representación vectorial exacta del logo de Colderman -->
                     <svg viewBox="0 0 100 100" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Engranaje naranja superior -->
                         <path d="M50 15L54 22H63L61 30L68 35L63 42L69 48L61 52L64 60H55L50 67L45 60H36L39 52L31 48L37 42L32 35L39 30L37 22H46L50 15Z" fill="#FF6B00"/>
                         <circle cx="50" cy="41" r="14" fill="#0A2540"/>
-                        <!-- Símbolo interno frío/calor -->
                         <path d="M43 38L50 34L57 38M50 34V46" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"/>
                         <path d="M43 45L50 49L57 45M50 49V39" stroke="#FF3B30" stroke-width="2.5" stroke-linecap="round"/>
-                        <!-- Arco y texto base -->
                         <path d="M20 72C35 60 65 60 80 72" stroke="#4A7C99" stroke-width="4" stroke-linecap="round"/>
                     </svg>
                 </div>
@@ -93,7 +88,6 @@
     </header>
 
     <main>
-        <!-- Métricas -->
         <div class="stats-grid">
             <div class="card">
                 <div class="stat-title">Pendientes de Recepción</div>
@@ -113,7 +107,6 @@
             </div>
         </div>
 
-        <!-- Filtros y Buscador -->
         <div class="toolbar">
             <div class="search-box">
                 <span class="search-icon">🔍</span>
@@ -127,7 +120,6 @@
             </div>
         </div>
 
-        <!-- Tabla -->
         <div class="table-container">
             <table>
                 <thead>
@@ -136,7 +128,7 @@
                         <th>Cliente / Factura</th>
                         <th>Repuesto / Compresor</th>
                         <th>Motivo Específico</th>
-                        <th>Estado / Bsale</th>
+                        <th>Estado / Ubicación</th>
                         <th style="text-align: right;">Acciones</th>
                     </tr>
                 </thead>
@@ -154,7 +146,7 @@
     <div class="modal-overlay" id="devolucionModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Nueva Devolución / Garantía / Cambio</h3>
+                <h3>Nueva Devolución / Garantía</h3>
                 <button class="close-btn" onclick="closeModal()">×</button>
             </div>
             <form onsubmit="saveDevolucion(event)" style="display: flex; flex-direction: column; gap: 14px;">
@@ -170,12 +162,12 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Código de Producto (Bsale)</label>
+                        <label>Código de Producto</label>
                         <input type="text" id="codigo" required placeholder="Ej. CMP-SD508">
                     </div>
                     <div class="form-group">
                         <label>Nombre del Repuesto</label>
-                        <input type="text" id="producto" required placeholder="Ej. Compresor Sanden SD508">
+                        <input type="text" id="producto" required placeholder="Ej. Compresor Sanden">
                     </div>
                 </div>
                 <div class="form-row">
@@ -196,7 +188,7 @@
                 </div>
                 <div class="form-group">
                     <label>Observaciones / Detalles Técnicos</label>
-                    <textarea id="observaciones" rows="3" placeholder="Estado del repuesto, ruido, fugas, etc..."></textarea>
+                    <textarea id="observaciones" rows="3" placeholder="Estado del repuesto, ruido, fugas..."></textarea>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -206,7 +198,7 @@
         </div>
     </div>
 
-    <!-- Modal Gestión de Tía / Bodega -->
+    <!-- Modal Gestión (Tía / Primo) -->
     <div class="modal-overlay" id="gestionModal">
         <div class="modal">
             <div class="modal-header">
@@ -221,14 +213,25 @@
                     <label>Estado del Proceso</label>
                     <select id="nuevoEstado" onchange="toggleBloqueResolucion()">
                         <option value="Pendiente">Pendiente por recibir en bodega</option>
-                        <option value="Recibido">Recibido en Bodega — En revisión</option>
+                        <option value="Recibido">Recibido (En revisión o Bodega)</option>
                         <option value="Resuelto">Resuelto y Cerrado</option>
                     </select>
                 </div>
                 
                 <div id="bloqueResolucion" style="display: none; flex-direction: column; gap: 12px; background: #FAFAFC; padding: 14px; border-radius: 12px; border: 1px solid #E5E5EA;">
+                    
+                    <!-- NUEVO APARTADO: Lugar de Recepción Física -->
+                    <div class="form-group" style="padding-bottom: 8px; border-bottom: 1px dashed #D1D1D6;">
+                        <label style="color: #0A2540;">📍 Lugar de Recepción Física</label>
+                        <select id="lugarRecepcion" style="border-color: #0A2540; font-weight: 500;">
+                            <option value="Bodega Principal">🏭 Bodega Principal</option>
+                            <option value="Agencia de Transportes">📦 Agencia de Transportes (Retiro)</option>
+                            <option value="Casa de Gerencia">🏠 Casa de Gerencia (Primo)</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
-                        <label>Acción Tomada en Bsale / Inventario</label>
+                        <label>Acción Tomada (Bsale / Inventario)</label>
                         <select id="accionTomada">
                             <option value="Reingresar al inventario en Bsale">Reingresar al inventario en Bsale</option>
                             <option value="Hacer ajuste de inventario">Hacer ajuste de inventario</option>
@@ -246,7 +249,7 @@
 
                 <div class="form-group">
                     <label>Notas de Seguimiento</label>
-                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de tu tía o bodega..."></textarea>
+                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de tu tía, bodega o códigos intercambiados..."></textarea>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
@@ -258,35 +261,37 @@
     </div>
 
     <script>
-        let devoluciones = JSON.parse(localStorage.getItem('colderman_devoluciones_v4')) || [
+        let devoluciones = JSON.parse(localStorage.getItem('colderman_devoluciones_v5')) || [
             {
                 id: 'COL-8011',
-                fecha: '2026-09-25 09:30',
+                fecha: '2026-09-26 09:30',
                 cliente: 'Taller AireAuto Los Olivos',
                 factura: 'F-008912',
                 codigo: 'CMP-SD508',
                 producto: 'Compresor Sanden SD508 12V',
                 motivo: 'Garantía Técnica (Falla de Fábrica)',
                 registradoPor: 'Luis Felipe',
-                observaciones: 'Compresor presenta zumbido en polea al acelerar.',
-                estado: 'Pendiente',
-                accionTomada: '',
+                observaciones: 'Compresor presenta zumbido.',
+                estado: 'Recibido',
+                lugarRecepcion: 'Agencia de Transportes',
+                accionTomada: 'Enviar a garantía / proveedor',
                 folioBsale: '',
                 historial: []
             },
             {
                 id: 'COL-8012',
-                fecha: '2026-09-25 11:00',
+                fecha: '2026-09-26 11:00',
                 cliente: 'Repuestos Diesel y AC',
                 factura: 'F-008925',
                 codigo: 'CON-RN12',
                 producto: 'Condensador Renault Logan',
                 motivo: 'Cambio de Compresor / Pieza Equivocada',
                 registradoPor: 'Tía',
-                observaciones: 'Cliente solicitó cambio por modelo con rosca distinta.',
+                observaciones: 'Cliente solicitó cambio por rosca distinta.',
                 estado: 'Resuelto',
-                accionTomada: 'Emitir nota de crédito',
-                folioBsale: 'NC-001294',
+                lugarRecepcion: 'Bodega Principal',
+                accionTomada: 'Entregar cambio al cliente',
+                folioBsale: 'AJ-001294',
                 historial: []
             }
         ];
@@ -300,7 +305,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('colderman_devoluciones_v4', JSON.stringify(devoluciones));
+            localStorage.setItem('colderman_devoluciones_v5', JSON.stringify(devoluciones));
             renderTable();
             updateStats();
         }
@@ -324,6 +329,7 @@
                 registradoPor: document.getElementById('registradoPor').value,
                 observaciones: document.getElementById('observaciones').value,
                 estado: 'Pendiente',
+                lugarRecepcion: '',
                 accionTomada: '',
                 folioBsale: '',
                 historial: []
@@ -385,8 +391,9 @@
                     </td>
                     <td>
                         <span class="badge ${badgeClass}">${item.estado}</span>
-                        ${item.accionTomada ? `<div style="font-size: 12px; color: #8E8E93; margin-top: 4px;">✔ ${item.accionTomada}</div>` : ''}
-                        ${item.folioBsale ? `<div style="font-size: 11px; font-family: monospace; color: #0A2540; margin-top: 2px;">Folio: ${item.folioBsale}</div>` : ''}
+                        ${item.lugarRecepcion ? `<div style="font-size: 11px; color: #0A2540; font-weight: 600; margin-top: 6px;">📍 ${item.lugarRecepcion}</div>` : ''}
+                        ${item.accionTomada ? `<div style="font-size: 11px; color: #8E8E93; margin-top: 3px;">✔ ${item.accionTomada}</div>` : ''}
+                        ${item.folioBsale ? `<div style="font-size: 11px; font-family: monospace; color: #FF6B00; margin-top: 2px;">Folio: ${item.folioBsale}</div>` : ''}
                     </td>
                     <td style="text-align: right;">
                         <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; display: inline-flex;" onclick="abrirGestion('${item.id}')">
@@ -413,6 +420,7 @@
             document.getElementById('gestionModalTitle').innerText = `Caso ${caso.id}`;
             document.getElementById('gestionModalSub').innerText = `${caso.cliente} — ${caso.producto}`;
             document.getElementById('nuevoEstado').value = caso.estado;
+            document.getElementById('lugarRecepcion').value = caso.lugarRecepcion || 'Bodega Principal';
             document.getElementById('accionTomada').value = caso.accionTomada || 'Reingresar al inventario en Bsale';
             document.getElementById('folioBsale').value = caso.folioBsale || '';
             document.getElementById('notaGestion').value = '';
@@ -442,9 +450,13 @@
 
             const nuevoEstado = document.getElementById('nuevoEstado').value;
             caso.estado = nuevoEstado;
+            
             if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
+                caso.lugarRecepcion = document.getElementById('lugarRecepcion').value;
                 caso.accionTomada = document.getElementById('accionTomada').value;
                 caso.folioBsale = document.getElementById('folioBsale').value;
+            } else {
+                caso.lugarRecepcion = ''; // Limpiar si vuelve a pendiente
             }
 
             saveToStorage();
