@@ -38,8 +38,8 @@
         .filter-btn { padding: 6px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; border: none; background: #F2F2F7; color: #8E8E93; cursor: pointer; white-space: nowrap; }
         .filter-btn.active { background: #0A2540; color: white; }
 
-        .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
+        .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
         th { background: #FAFAFC; padding: 12px 16px; font-size: 11px; font-weight: 700; color: #8E8E93; text-transform: uppercase; border-bottom: 1px solid #E5E5EA; }
         td { padding: 14px 16px; border-bottom: 1px solid #F2F2F7; font-size: 14px; vertical-align: top; }
         tr:last-child td { border-bottom: none; }
@@ -62,6 +62,13 @@
         input:focus, select:focus, textarea:focus { border-color: #FF6B00; background: white; }
         
         .empty-state { padding: 40px; text-align: center; color: #8E8E93; font-size: 14px; }
+
+        /* Corrección para celulares (Pantalla sin cortes) */
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; gap: 14px; }
+            .modal { padding: 18px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -80,10 +87,10 @@
                 </div>
                 <div class="logo-text">
                     <h1>COLDERMAN</h1>
-                    <p>Control de Devoluciones y Garantías</p>
+                    <p>Control de Devoluciones</p>
                 </div>
             </div>
-            <button class="btn" onclick="openModal()">+ Registrar Devolución</button>
+            <button class="btn" onclick="openModal()">+ Registrar</button>
         </div>
     </header>
 
@@ -133,11 +140,11 @@
                     </tr>
                 </thead>
                 <tbody id="casesTableBody">
-                    <tr><td colspan="6" style="text-align:center; color:#8E8E93;">Cargando base de datos...</td></tr>
+                    <tr><td colspan="6" style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase... Asegúrate de publicar las Reglas.</td></tr>
                 </tbody>
             </table>
             <div id="emptyState" class="empty-state" style="display: none;">
-                No se encontraron registros de devoluciones o garantías.
+                No se encontraron registros de devoluciones.
             </div>
         </div>
     </main>
@@ -146,7 +153,7 @@
     <div class="modal-overlay" id="devolucionModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Nueva Devolución / Garantía</h3>
+                <h3>Nueva Devolución</h3>
                 <button class="close-btn" onclick="closeModal()">×</button>
             </div>
             <form onsubmit="saveDevolucion(event)" style="display: flex; flex-direction: column; gap: 14px;">
@@ -255,7 +262,6 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, onValue, push, set, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
