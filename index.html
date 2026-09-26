@@ -94,7 +94,7 @@
                 <div class="stat-value" id="stat-pendientes" style="color: #FF6B00;">0</div>
             </div>
             <div class="card">
-                <div class="stat-title">En Bodega / Revisión</div>
+                <div class="stat-title">Recibidos / En Revisión</div>
                 <div class="stat-value" id="stat-revision" style="color: #007AFF;">0</div>
             </div>
             <div class="card">
@@ -115,7 +115,7 @@
             <div class="filters">
                 <button class="filter-btn active" onclick="setFilter('todos')" id="filter-todos">Todos</button>
                 <button class="filter-btn" onclick="setFilter('Pendiente')" id="filter-Pendiente">Pendientes</button>
-                <button class="filter-btn" onclick="setFilter('Recibido')" id="filter-Recibido">En Bodega</button>
+                <button class="filter-btn" onclick="setFilter('Recibido')" id="filter-Recibido">Recibidos</button>
                 <button class="filter-btn" onclick="setFilter('Resuelto')" id="filter-Resuelto">Resueltos</button>
             </div>
         </div>
@@ -183,7 +183,7 @@
                     </div>
                     <div class="form-group">
                         <label>Registrado por</label>
-                        <input type="text" id="registradoPor" required placeholder="Tu nombre">
+                        <input type="text" id="registradoPor" required placeholder="Nombre del responsable">
                     </div>
                 </div>
                 <div class="form-group">
@@ -198,7 +198,7 @@
         </div>
     </div>
 
-    <!-- Modal Gestión (Tía / Primo) -->
+    <!-- Modal Gestión -->
     <div class="modal-overlay" id="gestionModal">
         <div class="modal">
             <div class="modal-header">
@@ -212,21 +212,20 @@
                 <div class="form-group">
                     <label>Estado del Proceso</label>
                     <select id="nuevoEstado" onchange="toggleBloqueResolucion()">
-                        <option value="Pendiente">Pendiente por recibir en bodega</option>
-                        <option value="Recibido">Recibido (En revisión o Bodega)</option>
+                        <option value="Pendiente">Pendiente por recibir</option>
+                        <option value="Recibido">Recibido / En revisión</option>
                         <option value="Resuelto">Resuelto y Cerrado</option>
                     </select>
                 </div>
                 
                 <div id="bloqueResolucion" style="display: none; flex-direction: column; gap: 12px; background: #FAFAFC; padding: 14px; border-radius: 12px; border: 1px solid #E5E5EA;">
                     
-                    <!-- NUEVO APARTADO: Lugar de Recepción Física -->
                     <div class="form-group" style="padding-bottom: 8px; border-bottom: 1px dashed #D1D1D6;">
                         <label style="color: #0A2540;">📍 Lugar de Recepción Física</label>
                         <select id="lugarRecepcion" style="border-color: #0A2540; font-weight: 500;">
                             <option value="Bodega Principal">🏭 Bodega Principal</option>
                             <option value="Agencia de Transportes">📦 Agencia de Transportes (Retiro)</option>
-                            <option value="Casa de Gerencia">🏠 Casa de Gerencia (Primo)</option>
+                            <option value="Casa de Gerencia">🏠 Casa de Gerencia</option>
                         </select>
                     </div>
 
@@ -249,7 +248,7 @@
 
                 <div class="form-group">
                     <label>Notas de Seguimiento</label>
-                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de tu tía, bodega o códigos intercambiados..."></textarea>
+                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de resolución, diagnóstico o códigos intercambiados..."></textarea>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
@@ -261,7 +260,7 @@
     </div>
 
     <script>
-        let devoluciones = JSON.parse(localStorage.getItem('colderman_devoluciones_v5')) || [
+        let devoluciones = JSON.parse(localStorage.getItem('colderman_devoluciones_v6')) || [
             {
                 id: 'COL-8011',
                 fecha: '2026-09-26 09:30',
@@ -286,7 +285,7 @@
                 codigo: 'CON-RN12',
                 producto: 'Condensador Renault Logan',
                 motivo: 'Cambio de Compresor / Pieza Equivocada',
-                registradoPor: 'Tía',
+                registradoPor: 'Encargado',
                 observaciones: 'Cliente solicitó cambio por rosca distinta.',
                 estado: 'Resuelto',
                 lugarRecepcion: 'Bodega Principal',
@@ -305,7 +304,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('colderman_devoluciones_v5', JSON.stringify(devoluciones));
+            localStorage.setItem('colderman_devoluciones_v6', JSON.stringify(devoluciones));
             renderTable();
             updateStats();
         }
