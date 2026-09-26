@@ -98,7 +98,7 @@
                 <div class="stat-value" id="stat-revision" style="color: #007AFF;">0</div>
             </div>
             <div class="card">
-                <div class="stat-title">Resueltos / Mes</div>
+                <div class="stat-title">Resueltos</div>
                 <div class="stat-value" id="stat-resueltos" style="color: #34C759;">0</div>
             </div>
             <div class="card">
@@ -133,7 +133,7 @@
                     </tr>
                 </thead>
                 <tbody id="casesTableBody">
-                    <!-- Registros inyectados por JS -->
+                    <tr><td colspan="6" style="text-align:center; color:#8E8E93;">Cargando base de datos...</td></tr>
                 </tbody>
             </table>
             <div id="emptyState" class="empty-state" style="display: none;">
@@ -219,7 +219,6 @@
                 </div>
                 
                 <div id="bloqueResolucion" style="display: none; flex-direction: column; gap: 12px; background: #FAFAFC; padding: 14px; border-radius: 12px; border: 1px solid #E5E5EA;">
-                    
                     <div class="form-group" style="padding-bottom: 8px; border-bottom: 1px dashed #D1D1D6;">
                         <label style="color: #0A2540;">📍 Lugar de Recepción Física</label>
                         <select id="lugarRecepcion" style="border-color: #0A2540; font-weight: 500;">
@@ -228,7 +227,6 @@
                             <option value="Casa de Gerencia">🏠 Casa de Gerencia</option>
                         </select>
                     </div>
-
                     <div class="form-group">
                         <label>Acción Tomada (Bsale / Inventario)</label>
                         <select id="accionTomada">
@@ -245,12 +243,10 @@
                         <input type="text" id="folioBsale" placeholder="Ej. NC-00192 o AJ-884">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Notas de Seguimiento</label>
-                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de resolución, diagnóstico o códigos intercambiados..."></textarea>
+                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de resolución o códigos intercambiados..."></textarea>
                 </div>
-
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
                     <button type="button" class="btn btn-secondary" onclick="closeGestionModal()">Cancelar</button>
                     <button type="button" class="btn" onclick="guardarGestion()">Confirmar Acción</button>
@@ -259,63 +255,47 @@
         </div>
     </div>
 
-    <script>
-        let devoluciones = JSON.parse(localStorage.getItem('colderman_devoluciones_v6')) || [
-            {
-                id: 'COL-8011',
-                fecha: '2026-09-26 09:30',
-                cliente: 'Taller AireAuto Los Olivos',
-                factura: 'F-008912',
-                codigo: 'CMP-SD508',
-                producto: 'Compresor Sanden SD508 12V',
-                motivo: 'Garantía Técnica (Falla de Fábrica)',
-                registradoPor: 'Luis Felipe',
-                observaciones: 'Compresor presenta zumbido.',
-                estado: 'Recibido',
-                lugarRecepcion: 'Agencia de Transportes',
-                accionTomada: 'Enviar a garantía / proveedor',
-                folioBsale: '',
-                historial: []
-            },
-            {
-                id: 'COL-8012',
-                fecha: '2026-09-26 11:00',
-                cliente: 'Repuestos Diesel y AC',
-                factura: 'F-008925',
-                codigo: 'CON-RN12',
-                producto: 'Condensador Renault Logan',
-                motivo: 'Cambio de Compresor / Pieza Equivocada',
-                registradoPor: 'Encargado',
-                observaciones: 'Cliente solicitó cambio por rosca distinta.',
-                estado: 'Resuelto',
-                lugarRecepcion: 'Bodega Principal',
-                accionTomada: 'Entregar cambio al cliente',
-                folioBsale: 'AJ-001294',
-                historial: []
-            }
-        ];
+    <!-- SCRIPT DE FIREBASE Y LÓGICA -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue, push, set, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-        let currentFilter = 'todos';
-        let currentGestionId = null;
+        const firebaseConfig = {
+            apiKey: "AIzaSyAchIiXx2vIvtMLAAkbwjzEV4zsT4vqzGI",
+            authDomain: "colderman-devoluciones.firebaseapp.com",
+            projectId: "colderman-devoluciones",
+            storageBucket: "colderman-devoluciones.firebasestorage.app",
+            messagingSenderId: "475161753022",
+            appId: "1:475161753022:web:0f13aacfc7a104919c35ef"
+        };
 
-        function init() {
-            renderTable();
-            updateStats();
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const devolucionesRef = ref(db, 'devoluciones');
 
-        function saveToStorage() {
-            localStorage.setItem('colderman_devoluciones_v6', JSON.stringify(devoluciones));
-            renderTable();
-            updateStats();
-        }
+        window.devoluciones = [];
+        window.currentFilter = 'todos';
+        window.currentGestionKey = null;
 
-        function openModal() { document.getElementById('devolucionModal').style.display = 'flex'; }
-        function closeModal() {
+        onValue(devolucionesRef, (snapshot) => {
+            window.devoluciones = [];
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                data.firebaseKey = childSnapshot.key;
+                window.devoluciones.push(data);
+            });
+            window.devoluciones.reverse(); 
+            window.renderTable();
+            window.updateStats();
+        });
+
+        window.openModal = function() { document.getElementById('devolucionModal').style.display = 'flex'; }
+        window.closeModal = function() {
             document.getElementById('devolucionModal').style.display = 'none';
             document.getElementById('devolucionForm').reset();
         }
 
-        function saveDevolucion(e) {
+        window.saveDevolucion = function(e) {
             e.preventDefault();
             const nuevoCaso = {
                 id: 'COL-' + Math.floor(1000 + Math.random() * 9000),
@@ -330,32 +310,31 @@
                 estado: 'Pendiente',
                 lugarRecepcion: '',
                 accionTomada: '',
-                folioBsale: '',
-                historial: []
+                folioBsale: ''
             };
-            devoluciones.unshift(nuevoCaso);
-            saveToStorage();
-            closeModal();
+            const newRef = push(devolucionesRef);
+            set(newRef, nuevoCaso);
+            window.closeModal();
         }
 
-        function setFilter(filtro) {
-            currentFilter = filtro;
+        window.setFilter = function(filtro) {
+            window.currentFilter = filtro;
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById('filter-' + filtro).classList.add('active');
-            renderTable();
+            window.renderTable();
         }
 
-        function renderTable() {
+        window.renderTable = function() {
             const tbody = document.getElementById('casesTableBody');
             const search = document.getElementById('searchInput').value.toLowerCase();
             tbody.innerHTML = '';
 
-            const filtrados = devoluciones.filter(item => {
+            const filtrados = window.devoluciones.filter(item => {
                 const matchSearch = item.cliente.toLowerCase().includes(search) ||
                                     item.factura.toLowerCase().includes(search) ||
                                     item.producto.toLowerCase().includes(search) ||
                                     item.codigo.toLowerCase().includes(search);
-                const matchFilter = currentFilter === 'todos' || item.estado === currentFilter;
+                const matchFilter = window.currentFilter === 'todos' || item.estado === window.currentFilter;
                 return matchSearch && matchFilter;
             });
 
@@ -395,7 +374,7 @@
                         ${item.folioBsale ? `<div style="font-size: 11px; font-family: monospace; color: #FF6B00; margin-top: 2px;">Folio: ${item.folioBsale}</div>` : ''}
                     </td>
                     <td style="text-align: right;">
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; display: inline-flex;" onclick="abrirGestion('${item.id}')">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; display: inline-flex;" onclick="abrirGestion('${item.firebaseKey}')">
                             Gestionar
                         </button>
                     </td>
@@ -404,16 +383,16 @@
             });
         }
 
-        function updateStats() {
-            document.getElementById('stat-pendientes').innerText = devoluciones.filter(i => i.estado === 'Pendiente').length;
-            document.getElementById('stat-revision').innerText = devoluciones.filter(i => i.estado === 'Recibido').length;
-            document.getElementById('stat-resueltos').innerText = devoluciones.filter(i => i.estado === 'Resuelto').length;
-            document.getElementById('stat-total').innerText = devoluciones.length;
+        window.updateStats = function() {
+            document.getElementById('stat-pendientes').innerText = window.devoluciones.filter(i => i.estado === 'Pendiente').length;
+            document.getElementById('stat-revision').innerText = window.devoluciones.filter(i => i.estado === 'Recibido').length;
+            document.getElementById('stat-resueltos').innerText = window.devoluciones.filter(i => i.estado === 'Resuelto').length;
+            document.getElementById('stat-total').innerText = window.devoluciones.length;
         }
 
-        function abrirGestion(id) {
-            currentGestionId = id;
-            const caso = devoluciones.find(i => i.id === id);
+        window.abrirGestion = function(key) {
+            window.currentGestionKey = key;
+            const caso = window.devoluciones.find(i => i.firebaseKey === key);
             if (!caso) return;
 
             document.getElementById('gestionModalTitle').innerText = `Caso ${caso.id}`;
@@ -424,16 +403,16 @@
             document.getElementById('folioBsale').value = caso.folioBsale || '';
             document.getElementById('notaGestion').value = '';
 
-            toggleBloqueResolucion();
+            window.toggleBloqueResolucion();
             document.getElementById('gestionModal').style.display = 'flex';
         }
 
-        function closeGestionModal() {
+        window.closeGestionModal = function() {
             document.getElementById('gestionModal').style.display = 'none';
-            currentGestionId = null;
+            window.currentGestionKey = null;
         }
 
-        function toggleBloqueResolucion() {
+        window.toggleBloqueResolucion = function() {
             const estado = document.getElementById('nuevoEstado').value;
             const bloque = document.getElementById('bloqueResolucion');
             if (estado === 'Recibido' || estado === 'Resuelto') {
@@ -443,26 +422,26 @@
             }
         }
 
-        function guardarGestion() {
-            const caso = devoluciones.find(i => i.id === currentGestionId);
-            if (!caso) return;
-
+        window.guardarGestion = function() {
+            if (!window.currentGestionKey) return;
+            const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
             const nuevoEstado = document.getElementById('nuevoEstado').value;
-            caso.estado = nuevoEstado;
+            
+            let updates = { estado: nuevoEstado };
             
             if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
-                caso.lugarRecepcion = document.getElementById('lugarRecepcion').value;
-                caso.accionTomada = document.getElementById('accionTomada').value;
-                caso.folioBsale = document.getElementById('folioBsale').value;
+                updates.lugarRecepcion = document.getElementById('lugarRecepcion').value;
+                updates.accionTomada = document.getElementById('accionTomada').value;
+                updates.folioBsale = document.getElementById('folioBsale').value;
             } else {
-                caso.lugarRecepcion = ''; // Limpiar si vuelve a pendiente
+                updates.lugarRecepcion = ''; 
+                updates.accionTomada = '';
+                updates.folioBsale = '';
             }
 
-            saveToStorage();
-            closeGestionModal();
+            update(casoRef, updates);
+            window.closeGestionModal();
         }
-
-        window.onload = init;
     </script>
 </body>
 </html>
