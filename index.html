@@ -132,7 +132,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Folio / Fecha</th>
+                        <th>Código / Fecha</th>
                         <th>Cliente / Factura</th>
                         <th>Repuesto / Compresor</th>
                         <th>Motivo Específico</th>
@@ -206,7 +206,7 @@
         </div>
     </div>
 
-    <!-- Modal Gestión (Con botón Eliminar incluido) -->
+    <!-- Modal Gestión -->
     <div class="modal-overlay" id="gestionModal">
         <div class="modal">
             <div class="modal-header">
@@ -218,7 +218,6 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 14px;">
                 
-                <!-- Resumen de detalles para visualizar en celular -->
                 <div id="detalleCasoBox" style="background: #F2F2F7; padding: 10px 12px; border-radius: 10px; font-size: 13px; color: #3A3A3C;">
                     <!-- Inyectado por JS -->
                 </div>
@@ -262,7 +261,6 @@
                     <textarea id="notaGestion" rows="3" placeholder="Comentarios de resolución o códigos intercambiados..."></textarea>
                 </div>
                 
-                <!-- Botonera inferior: Eliminar + Guardar -->
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px;">
                     <button type="button" class="btn-danger" onclick="eliminarCaso()">Eliminar Caso</button>
                     <div style="display: flex; gap: 8px;">
@@ -371,8 +369,8 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
-                        <strong style="color: #0A2540;">${item.id}</strong>
-                        <div style="font-size: 12px; color: #8E8E93; margin-top: 2px;">${item.fecha}</div>
+                        <strong style="color: #0A2540; font-family: monospace; font-size: 13px;">${item.codigo}</strong>
+                        <div style="font-size: 11px; color: #8E8E93; margin-top: 2px;">${item.fecha}</div>
                     </td>
                     <td>
                         <div style="font-weight: 500;">${item.cliente}</div>
@@ -380,13 +378,14 @@
                     </td>
                     <td>
                         <div style="font-weight: 500;">${item.producto}</div>
-                        <div style="font-size: 12px; font-family: monospace; color: #8E8E93; margin-top: 2px;">${item.codigo}</div>
+                        <div style="font-size: 11px; color: #8E8E93; margin-top: 2px;">Ref Interna: ${item.id}</div>
                     </td>
                     <td>
                         <span style="background: #F2F2F7; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 500;">${item.motivo}</span>
                     </td>
                     <td>
-                        <span class="badge ${badgeClass}">${item.estado}</span>${item.lugarRecepcion ? `<div style="font-size: 11px; color: #0A2540; font-weight: 600; margin-top: 6px;">📍 ${item.lugarRecepcion}</div>` : ''}
+                        <span class="badge ${badgeClass}">${item.estado}</span>
+                        ${item.lugarRecepcion ? `<div style="font-size: 11px; color: #0A2540; font-weight: 600; margin-top: 6px;">📍 ${item.lugarRecepcion}</div>` : ''}
                         ${item.accionTomada ? `<div style="font-size: 11px; color: #8E8E93; margin-top: 3px;">✔ ${item.accionTomada}</div>` : ''}
                         ${item.folioBsale ? `<div style="font-size: 11px; font-family: monospace; color: #FF6B00; margin-top: 2px;">Folio: ${item.folioBsale}</div>` : ''}
                     </td>
@@ -413,10 +412,10 @@
             if (!caso) return;
 
             document.getElementById('gestionModalTitle').innerText = `Caso ${caso.id}`;
-            document.getElementById('gestionModalSub').innerText = `${caso.cliente} —${caso.producto}`;
+            document.getElementById('gestionModalSub').innerText = `${caso.cliente} — ${caso.producto}`;
             
-            // Llenar caja de detalles completos para celular
             document.getElementById('detalleCasoBox').innerHTML = `
+                <div><strong>Código Producto:</strong> <span style="font-family:monospace; color:#0A2540; font-weight:bold;">${caso.codigo}</span></div>
                 <div><strong>Registrado por:</strong> ${caso.registradoPor || 'N/D'}</div>
                 <div><strong>Motivo:</strong> ${caso.motivo}</div>
                 <div><strong>Obs:</strong> ${caso.observaciones || 'Ninguna'}</div>
@@ -455,7 +454,7 @@
             let updates = { estado: nuevoEstado };
             
             if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
-                updates.lugarRecepcion = document.getElementById('lugarRecepcion`').value || document.getElementById('lugarRecepcion').value;
+                updates.lugarRecepcion = document.getElementById('lugarRecepcion').value;
                 updates.accionTomada = document.getElementById('accionTomada').value;
                 updates.folioBsale = document.getElementById('folioBsale').value;
             } else {
