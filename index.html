@@ -20,6 +20,8 @@
         .btn:hover { background: #E05E00; }
         .btn-secondary { background: #E5E5EA; color: #1C1C1E; }
         .btn-secondary:hover { background: #D1D1D6; }
+        .btn-danger { background: #FF3B30; color: white; border: none; padding: 8px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .btn-danger:hover { background: #D32F2F; }
 
         main { max-width: 1100px; margin: 24px auto; width: 100%; padding: 0 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
@@ -58,15 +60,14 @@
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #8E8E93; }
-        input, select, textarea { padding: 10px 12px; border-radius: 12px; border: 1px solid #E5E5EA; font-size: 14px; outline: none; background: #FAFAFC; }
+        input, select, textarea { padding: 10px 12px; border-radius: 12px; border: 1px solid #E5E5EA; font-size: 14px; outline: none; background: #FAFAFC; width: 100%; }
         input:focus, select:focus, textarea:focus { border-color: #FF6B00; background: white; }
         
         .empty-state { padding: 40px; text-align: center; color: #8E8E93; font-size: 14px; }
 
-        /* Corrección para celulares (Pantalla sin cortes) */
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; gap: 14px; }
-            .modal { padding: 18px; }
+            .modal { padding: 18px; max-width: 100%; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
@@ -140,7 +141,7 @@
                     </tr>
                 </thead>
                 <tbody id="casesTableBody">
-                    <tr><td colspan="6" style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase... Asegúrate de publicar las Reglas.</td></tr>
+                    <tr><td colspan="6" style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase...</td></tr>
                 </tbody>
             </table>
             <div id="emptyState" class="empty-state" style="display: none;">
@@ -205,7 +206,7 @@
         </div>
     </div>
 
-    <!-- Modal Gestión -->
+    <!-- Modal Gestión (Con botón Eliminar incluido) -->
     <div class="modal-overlay" id="gestionModal">
         <div class="modal">
             <div class="modal-header">
@@ -216,6 +217,12 @@
                 <button class="close-btn" onclick="closeGestionModal()">×</button>
             </div>
             <div style="display: flex; flex-direction: column; gap: 14px;">
+                
+                <!-- Resumen de detalles para visualizar en celular -->
+                <div id="detalleCasoBox" style="background: #F2F2F7; padding: 10px 12px; border-radius: 10px; font-size: 13px; color: #3A3A3C;">
+                    <!-- Inyectado por JS -->
+                </div>
+
                 <div class="form-group">
                     <label>Estado del Proceso</label>
                     <select id="nuevoEstado" onchange="toggleBloqueResolucion()">
@@ -254,9 +261,14 @@
                     <label>Notas de Seguimiento</label>
                     <textarea id="notaGestion" rows="3" placeholder="Comentarios de resolución o códigos intercambiados..."></textarea>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeGestionModal()">Cancelar</button>
-                    <button type="button" class="btn" onclick="guardarGestion()">Confirmar Acción</button>
+                
+                <!-- Botonera inferior: Eliminar + Guardar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px;">
+                    <button type="button" class="btn-danger" onclick="eliminarCaso()">Eliminar Caso</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeGestionModal()">Cancelar</button>
+                        <button type="button" class="btn" onclick="guardarGestion()">Actualizar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -264,7 +276,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, onValue, push, set, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAchIiXx2vIvtMLAAkbwjzEV4zsT4vqzGI",
@@ -374,8 +386,7 @@
                         <span style="background: #F2F2F7; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 500;">${item.motivo}</span>
                     </td>
                     <td>
-                        <span class="badge ${badgeClass}">${item.estado}</span>
-                        ${item.lugarRecepcion ? `<div style="font-size: 11px; color: #0A2540; font-weight: 600; margin-top: 6px;">📍 ${item.lugarRecepcion}</div>` : ''}
+                        <span class="badge ${badgeClass}">${item.estado}</span>${item.lugarRecepcion ? `<div style="font-size: 11px; color: #0A2540; font-weight: 600; margin-top: 6px;">📍 ${item.lugarRecepcion}</div>` : ''}
                         ${item.accionTomada ? `<div style="font-size: 11px; color: #8E8E93; margin-top: 3px;">✔ ${item.accionTomada}</div>` : ''}
                         ${item.folioBsale ? `<div style="font-size: 11px; font-family: monospace; color: #FF6B00; margin-top: 2px;">Folio: ${item.folioBsale}</div>` : ''}
                     </td>
@@ -402,7 +413,15 @@
             if (!caso) return;
 
             document.getElementById('gestionModalTitle').innerText = `Caso ${caso.id}`;
-            document.getElementById('gestionModalSub').innerText = `${caso.cliente} — ${caso.producto}`;
+            document.getElementById('gestionModalSub').innerText = `${caso.cliente} —${caso.producto}`;
+            
+            // Llenar caja de detalles completos para celular
+            document.getElementById('detalleCasoBox').innerHTML = `
+                <div><strong>Registrado por:</strong> ${caso.registradoPor || 'N/D'}</div>
+                <div><strong>Motivo:</strong> ${caso.motivo}</div>
+                <div><strong>Obs:</strong> ${caso.observaciones || 'Ninguna'}</div>
+            `;
+
             document.getElementById('nuevoEstado').value = caso.estado;
             document.getElementById('lugarRecepcion').value = caso.lugarRecepcion || 'Bodega Principal';
             document.getElementById('accionTomada').value = caso.accionTomada || 'Reingresar al inventario en Bsale';
@@ -436,7 +455,7 @@
             let updates = { estado: nuevoEstado };
             
             if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
-                updates.lugarRecepcion = document.getElementById('lugarRecepcion').value;
+                updates.lugarRecepcion = document.getElementById('lugarRecepcion`').value || document.getElementById('lugarRecepcion').value;
                 updates.accionTomada = document.getElementById('accionTomada').value;
                 updates.folioBsale = document.getElementById('folioBsale').value;
             } else {
@@ -447,6 +466,16 @@
 
             update(casoRef, updates);
             window.closeGestionModal();
+        }
+
+        window.eliminarCaso = function() {
+            if (!window.currentGestionKey) return;
+            if (confirm("¿Estás seguro de que deseas eliminar este caso de prueba?")) {
+                const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
+                remove(casoRef).then(() => {
+                    window.closeGestionModal();
+                });
+            }
         }
     </script>
 </body>
