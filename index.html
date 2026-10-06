@@ -230,7 +230,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>📸 Foto del Ticket / Guía (Seguimiento)</label>
+                    <label>📸 Foto del Ticket / Guía de Envío (Opcional)</label>
                     <input type="file" id="ticketImage" accept="image/*" style="background: white; padding: 6px;">
                 </div>
                 <div class="form-group">
@@ -257,9 +257,15 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 14px;">
                 
-                <!-- Resumen de qué se hizo y quién fue -->
+                <!-- Resumen y Ticket -->
                 <div id="detalleCasoBox" style="background: #F2F2F7; padding: 12px; border-radius: 12px; font-size: 13px; color: #3A3A3C; display: flex; flex-direction: column; gap: 6px; border-left: 3px solid #0A2540;">
                     <!-- Inyectado por JS -->
+                </div>
+
+                <!-- Botón para subir o cambiar el ticket en la gestión -->
+                <div class="form-group" style="background: #FAFAFC; padding: 10px; border-radius: 10px; border: 1px dashed #D1D1D6;">
+                    <label style="color: #0A2540;">📷 Adjuntar o Actualizar Ticket / Guía de Envío</label>
+                    <input type="file" id="ticketImageGestion" accept="image/*" style="background: white; padding: 4px; margin-top: 4px; font-size: 12px;">
                 </div>
 
                 <div class="form-group">
@@ -399,10 +405,9 @@
         window.openModal = function() { document.getElementById('devolucionModal').style.display = 'flex'; }
         window.closeModal = function() {
             document.getElementById('devolucionModal').style.display = 'none';
-            document.querySelector('form').reset();
+            document.querySelector('#devolucionModal form').reset();
         }
 
-        // Función para comprimir imagen y evitar sobrecargar Firebase
         function comprimirImagen(file, callback) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -572,6 +577,7 @@
             document.getElementById('folioBsale').value = caso.folioBsale || '';
             document.getElementById('responsableGestion').value = caso.ultimaGestionPor || '';
             document.getElementById('notaGestion').value = '';
+            document.getElementById('ticketImageGestion').value = '';
 
             window.toggleBloqueResolucion();
             document.getElementById('gestionModal').style.display = 'flex';
@@ -609,27 +615,47 @@
                 return;
             }
 
-            const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
-            const nuevoEstado = document.getElementById('nuevoEstado').value;
-            
-            let updates = { 
-                estado: nuevoEstado,
-                ultimaGestionPor: responsable,
-                ultimaNota: document.getElementById('notaGestion').value || 'Cambio de estado a ' + nuevoEstado
-            };
-            
-            if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
-                updates.lugarRecepcion = document.getElementById('lugarRecepcion').value;
-                updates.accionTomada = document.getElementById('accionTomada').value;
-                updates.folioBsale = document.getElementById('folioBsale').value;
-            } else {
-                updates.lugarRecepcion = ''; 
-                updates.accionTomada = '';
-                updates.folioBsale = '';
-            }
+            const fileInput = document.getElementById('ticketImageGestion');
 
-            update(casoRef, updates);
-            window.closeGestionModal();
+            const ejecutarUpdate = (ticketBase64) => {
+                const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
+                const nuevoEstado = document.getElementById('nuevoEstado').value;
+                
+                const casoActual = window.devoluciones.find(i => i.firebaseKey === window.currentGestionKey);
+
+                let updates = { 
+                    estado: nuevoEstado,
+                    ultimaGestionPor: responsable,
+                    ultimaNota: document.getElementById('notaGestion').value || 'Cambio de estado a ' + nuevoEstado
+                };
+
+                if (ticketBase64) {
+                    updates.ticketImg = ticketBase64;
+                } else if (casoActual && casoActual.ticketImg) {
+                    updates.ticketImg = casoActual.ticketImg;
+                }
+                
+                if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
+                    updates.lugarRecepcion = document.getElementById('lugarRecepcion').value;
+                    updates.accionTomada = document.getElementById('accionTomada').value;
+                    updates.folioBsale = document.getElementById('folioBsale').value;
+                } else {
+                    updates.lugarRecepcion = ''; 
+                    updates.accionTomada = '';
+                    updates.folioBsale = '';
+                }
+
+                update(casoRef, updates);
+                window.closeGestionModal();
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                comprimirImagen(fileInput.files[0], function(base64Img) {
+                    ejecutarUpdate(base64Img);
+                });
+            } else {
+                ejecutarUpdate(null);
+            }
         }
 
         window.eliminarCaso = function() {
