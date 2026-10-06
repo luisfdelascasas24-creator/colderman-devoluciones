@@ -23,6 +23,31 @@
         .btn-danger { background: #FF3B30; color: white; border: none; padding: 8px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .btn-danger:hover { background: #D32F2F; }
 
+        /* Notificación Flotante */
+        #toast-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            background: #0A2540;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            z-index: 100;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 92%;
+            width: 400px;
+            cursor: pointer;
+            border-left: 4px solid #FF6B00;
+        }
+        #toast-notification.show { transform: translateX(-50%) translateY(0); }
+
         main { max-width: 1100px; margin: 24px auto; width: 100%; padding: 0 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
@@ -73,6 +98,16 @@
     </style>
 </head>
 <body>
+
+    <!-- Alerta Flotante Interactiva -->
+    <div id="toast-notification" onclick="clickAlerta()">
+        <span style="font-size: 20px;">🔔</span>
+        <div style="flex: 1;">
+            <div id="toast-title" style="font-weight: 700; font-size: 12px; color: #FF6B00; text-transform: uppercase;">Actualización</div>
+            <div id="toast-message" style="font-size: 13px; margin-top: 2px;">Hay cambios en el caso...</div>
+        </div>
+        <span style="font-size: 12px; color: #8E8E93;">Ver ➔</span>
+    </div>
 
     <header>
         <div class="container header-content">
@@ -183,10 +218,10 @@
                         <label>Motivo Específico</label>
                         <select id="motivo">
                             <option value="Garantía Técnica (Falla de Fábrica)">Garantía Técnica (Falla de fábrica)</option>
-                            <option value="Cambio de Compresor / Pieza Equivocada">Cambio de Compresor / Pieza Equivocada</option>
+                            <option value="Cambio de Compresor / Error de Cliente">Cambio de Compresor / Error de cliente</option>
+                            <option value="Cambio de Compresor / Error de Bodega">Cambio de Compresor / Error de bodega</option>
                             <option value="Devolución por Anulación de Venta">Devolución por Anulación de Venta</option>
                             <option value="Defecto en Mangueras / Conexiones">Defecto en Mangueras / Conexiones</option>
-                            <option value="Error de Despacho en Bodega">Error de Despacho en Bodega</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -195,8 +230,12 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>📸 Foto del Ticket / Guía (Seguimiento)</label>
+                    <input type="file" id="ticketImage" accept="image/*" style="background: white; padding: 6px;">
+                </div>
+                <div class="form-group">
                     <label>Observaciones / Detalles Técnicos</label>
-                    <textarea id="observaciones" rows="3" placeholder="Estado del repuesto, ruido, fugas..."></textarea>
+                    <textarea id="observaciones" rows="2" placeholder="Estado del repuesto, ruido, fugas..."></textarea>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -218,7 +257,8 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 14px;">
                 
-                <div id="detalleCasoBox" style="background: #F2F2F7; padding: 10px 12px; border-radius: 10px; font-size: 13px; color: #3A3A3C;">
+                <!-- Resumen de qué se hizo y quién fue -->
+                <div id="detalleCasoBox" style="background: #F2F2F7; padding: 12px; border-radius: 12px; font-size: 13px; color: #3A3A3C; display: flex; flex-direction: column; gap: 6px; border-left: 3px solid #0A2540;">
                     <!-- Inyectado por JS -->
                 </div>
 
@@ -256,9 +296,15 @@
                         <input type="text" id="folioBsale" placeholder="Ej. NC-00192 o AJ-884">
                     </div>
                 </div>
+                
                 <div class="form-group">
-                    <label>Notas de Seguimiento</label>
-                    <textarea id="notaGestion" rows="3" placeholder="Comentarios de resolución o códigos intercambiados..."></textarea>
+                    <label>Tu Nombre (Responsable de la acción)</label>
+                    <input type="text" id="responsableGestion" required placeholder="Ej. Luis, Carlos...">
+                </div>
+
+                <div class="form-group">
+                    <label>Notas / Qué se hizo</label>
+                    <textarea id="notaGestion" rows="2" placeholder="Detalles de la gestión realizada..."></textarea>
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px;">
@@ -269,6 +315,14 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver imagen del ticket en grande -->
+    <div class="modal-overlay" id="imageModal" onclick="closeImageModal()">
+        <div style="background: white; padding: 16px; border-radius: 16px; max-width: 90%; max-height: 90vh; text-align: center;">
+            <img id="modalTicketImg" src="" style="max-width: 100%; max-height: 75vh; border-radius: 8px;">
+            <div style="margin-top: 10px; font-size: 13px; color: #8E8E93;">Toca fuera para cerrar</div>
         </div>
     </div>
 
@@ -292,8 +346,31 @@
         window.devoluciones = [];
         window.currentFilter = 'todos';
         window.currentGestionKey = null;
+        let isFirstLoad = true;
+        let ultimoCasoModificadoKey = null;
+
+        function mostrarAlerta(titulo, mensaje, firebaseKey) {
+            ultimoCasoModificadoKey = firebaseKey;
+            document.getElementById('toast-title').innerText = titulo;
+            document.getElementById('toast-message').innerText = mensaje;
+            const toast = document.getElementById('toast-notification');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 6000);
+        }
+
+        window.clickAlerta = function() {
+            if (ultimoCasoModificadoKey) {
+                document.getElementById('toast-notification').classList.remove('show');
+                window.abrirGestion(ultimoCasoModificadoKey);
+            }
+        }
 
         onValue(devolucionesRef, (snapshot) => {
+            const anteriorMap = {};
+            window.devoluciones.forEach(i => { anteriorMap[i.firebaseKey] = i; });
+
             window.devoluciones = [];
             snapshot.forEach((childSnapshot) => {
                 const data = childSnapshot.val();
@@ -301,6 +378,20 @@
                 window.devoluciones.push(data);
             });
             window.devoluciones.reverse(); 
+
+            if (!isFirstLoad) {
+                snapshot.forEach((childSnapshot) => {
+                    const k = childSnapshot.key;
+                    const d = childSnapshot.val();
+                    if (!anteriorMap[k]) {
+                        mostrarAlerta("Nuevo Registro", `${d.cliente} (Fac: ${d.factura}) - ${d.producto}`, k);
+                    } else if (JSON.stringify(anteriorMap[k]) !== JSON.stringify(d)) {
+                        mostrarAlerta("Cambio de Estado / Gestión", `${d.cliente} (Fac: ${d.factura}) [${d.estado}]`, k);
+                    }
+                });
+            }
+            isFirstLoad = false;
+
             window.renderTable();
             window.updateStats();
         });
@@ -308,29 +399,73 @@
         window.openModal = function() { document.getElementById('devolucionModal').style.display = 'flex'; }
         window.closeModal = function() {
             document.getElementById('devolucionModal').style.display = 'none';
-            document.getElementById('devolucionForm').reset();
+            document.querySelector('form').reset();
+        }
+
+        // Función para comprimir imagen y evitar sobrecargar Firebase
+        function comprimirImagen(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.7));
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
         }
 
         window.saveDevolucion = function(e) {
             e.preventDefault();
-            const nuevoCaso = {
-                id: 'COL-' + Math.floor(1000 + Math.random() * 9000),
-                fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
-                cliente: document.getElementById('cliente').value,
-                factura: document.getElementById('factura').value,
-                codigo: document.getElementById('codigo').value,
-                producto: document.getElementById('producto').value,
-                motivo: document.getElementById('motivo').value,
-                registradoPor: document.getElementById('registradoPor').value,
-                observaciones: document.getElementById('observaciones').value,
-                estado: 'Pendiente',
-                lugarRecepcion: '',
-                accionTomada: '',
-                folioBsale: ''
+            const fileInput = document.getElementById('ticketImage');
+            
+            const guardarDatos = (ticketBase64) => {
+                const nuevoCaso = {
+                    id: 'COL-' + Math.floor(1000 + Math.random() * 9000),
+                    fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                    cliente: document.getElementById('cliente').value,
+                    factura: document.getElementById('factura').value,
+                    codigo: document.getElementById('codigo').value,
+                    producto: document.getElementById('producto').value,
+                    motivo: document.getElementById('motivo').value,
+                    registradoPor: document.getElementById('registradoPor').value,
+                    observaciones: document.getElementById('observaciones').value,
+                    ticketImg: ticketBase64 || '',
+                    estado: 'Pendiente',
+                    lugarRecepcion: '',
+                    accionTomada: '',
+                    folioBsale: '',
+                    ultimaGestionPor: '',
+                    ultimaNota: ''
+                };
+                const newRef = push(devolucionesRef);
+                set(newRef, nuevoCaso);
+                window.closeModal();
             };
-            const newRef = push(devolucionesRef);
-            set(newRef, nuevoCaso);
-            window.closeModal();
+
+            if (fileInput.files && fileInput.files[0]) {
+                comprimirImagen(fileInput.files[0], function(base64Img) {
+                    guardarDatos(base64Img);
+                });
+            } else {
+                guardarDatos('');
+            }
         }
 
         window.setFilter = function(filtro) {
@@ -378,7 +513,7 @@
                     </td>
                     <td>
                         <div style="font-weight: 500;">${item.producto}</div>
-                        <div style="font-size: 11px; color: #8E8E93; margin-top: 2px;">Ref Interna: ${item.id}</div>
+                        <div style="font-size: 11px; color: #8E8E93; margin-top: 2px;">Registrado por: ${item.registradoPor || 'N/D'}</div>
                     </td>
                     <td>
                         <span style="background: #F2F2F7; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 500;">${item.motivo}</span>
@@ -414,21 +549,41 @@
             document.getElementById('gestionModalTitle').innerText = `Caso ${caso.id}`;
             document.getElementById('gestionModalSub').innerText = `${caso.cliente} — ${caso.producto}`;
             
+            let ticketHtml = caso.ticketImg 
+                ? `<div style="margin-top: 6px;"><a href="#" onclick="verTicket('${caso.ticketImg}'); return false;" style="color: #007AFF; font-weight: bold; text-decoration: underline;">📷 Ver Ticket / Guía de Envío adjunta</a></div>` 
+                : `<div style="color: #8E8E93; margin-top: 4px;">📷 Sin ticket o guía de envío adjunta</div>`;
+
             document.getElementById('detalleCasoBox').innerHTML = `
-                <div><strong>Código Producto:</strong> <span style="font-family:monospace; color:#0A2540; font-weight:bold;">${caso.codigo}</span></div>
-                <div><strong>Registrado por:</strong> ${caso.registradoPor || 'N/D'}</div>
+                <div><strong>Cliente / Fac:</strong> ${caso.cliente} (Fac: ${caso.factura})</div>
+                <div><strong>Producto:</strong> ${caso.producto} (<span style="font-family:monospace;">${caso.codigo}</span>)</div>
+                <div><strong>Creado por:</strong> ${caso.registradoPor || 'N/D'}</div>
                 <div><strong>Motivo:</strong> ${caso.motivo}</div>
                 <div><strong>Obs:</strong> ${caso.observaciones || 'Ninguna'}</div>
+                ${ticketHtml}
+                <div style="margin-top: 6px; border-top: 1px solid #E5E5EA; padding-top: 4px;">
+                    <strong>Última gestión:</strong> ${caso.ultimaGestionPor ? `<span style="color:#FF6B00; font-weight:bold;">${caso.ultimaGestionPor}</span>` : 'Sin gestionar aún'}
+                </div>
+                <div><strong>Qué se hizo:</strong> ${caso.ultimaNota || 'Ninguna observación'}</div>
             `;
 
             document.getElementById('nuevoEstado').value = caso.estado;
             document.getElementById('lugarRecepcion').value = caso.lugarRecepcion || 'Bodega Principal';
             document.getElementById('accionTomada').value = caso.accionTomada || 'Reingresar al inventario en Bsale';
             document.getElementById('folioBsale').value = caso.folioBsale || '';
+            document.getElementById('responsableGestion').value = caso.ultimaGestionPor || '';
             document.getElementById('notaGestion').value = '';
 
             window.toggleBloqueResolucion();
             document.getElementById('gestionModal').style.display = 'flex';
+        }
+
+        window.verTicket = function(base64Img) {
+            document.getElementById('modalTicketImg').src = base64Img;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        window.closeImageModal = function() {
+            document.getElementById('imageModal').style.display = 'none';
         }
 
         window.closeGestionModal = function() {
@@ -448,10 +603,20 @@
 
         window.guardarGestion = function() {
             if (!window.currentGestionKey) return;
+            const responsable = document.getElementById('responsableGestion').value;
+            if (!responsable) {
+                alert("Por favor ingresa tu nombre para registrar quién hizo la gestión.");
+                return;
+            }
+
             const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
             const nuevoEstado = document.getElementById('nuevoEstado').value;
             
-            let updates = { estado: nuevoEstado };
+            let updates = { 
+                estado: nuevoEstado,
+                ultimaGestionPor: responsable,
+                ultimaNota: document.getElementById('notaGestion').value || 'Cambio de estado a ' + nuevoEstado
+            };
             
             if (nuevoEstado === 'Recibido' || nuevoEstado === 'Resuelto') {
                 updates.lugarRecepcion = document.getElementById('lugarRecepcion').value;
@@ -469,7 +634,7 @@
 
         window.eliminarCaso = function() {
             if (!window.currentGestionKey) return;
-            if (confirm("¿Estás seguro de que deseas eliminar este caso de prueba?")) {
+            if (confirm("¿Estás seguro de que deseas eliminar este caso?")) {
                 const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
                 remove(casoRef).then(() => {
                     window.closeGestionModal();
