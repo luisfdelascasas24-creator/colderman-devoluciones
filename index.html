@@ -65,8 +65,9 @@
         .filter-btn { padding: 6px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; border: none; background: #F2F2F7; color: #8E8E93; cursor: pointer; white-space: nowrap; }
         .filter-btn.active { background: #0A2540; color: white; }
 
-        .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
+        /* Contenedor Adaptativo: Tabla en PC, Tarjetas en Celular */
+        .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); padding: 16px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
         th { background: #FAFAFC; padding: 12px 16px; font-size: 11px; font-weight: 700; color: #8E8E93; text-transform: uppercase; border-bottom: 1px solid #E5E5EA; }
         td { padding: 14px 16px; border-bottom: 1px solid #F2F2F7; font-size: 14px; vertical-align: top; }
         tr:last-child td { border-bottom: none; }
@@ -90,10 +91,17 @@
         
         .empty-state { padding: 40px; text-align: center; color: #8E8E93; font-size: 14px; }
 
-        @media (max-width: 600px) {
-            .form-row { grid-template-columns: 1fr; gap: 14px; }
-            .modal { padding: 18px; max-width: 100%; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
+        /* Estilo de Tarjetas Móviles para que no haya scroll horizontal */
+        @media (max-width: 768px) {
+            .desktop-table { display: none; }
+            .mobile-cards { display: flex; flex-direction: column; gap: 12px; }
+            .m-card { background: #FAFAFC; border: 1px solid #E5E5EA; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+            .m-card-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #E5E5EA; padding-bottom: 8px; }
+            .m-card-body { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #3A3A3C; }
+            .m-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 8px; border-top: 1px dashed #E5E5EA; }
+        }
+        @media (min-width: 769px) {
+            .mobile-cards { display: none; }
         }
     </style>
 </head>
@@ -164,21 +172,30 @@
         </div>
 
         <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Código / Fecha</th>
-                        <th>Cliente / Factura</th>
-                        <th>Repuesto / Compresor</th>
-                        <th>Motivo Específico</th>
-                        <th>Estado / Ubicación</th>
-                        <th style="text-align: right;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="casesTableBody">
-                    <tr><td colspan="6" style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase...</td></tr>
-                </tbody>
-            </table>
+            <!-- Vista Tabla para PC -->
+            <div class="desktop-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código / Fecha</th>
+                            <th>Cliente / Factura</th>
+                            <th>Repuesto / Compresor</th>
+                            <th>Motivo Específico</th>
+                            <th>Estado / Ubicación</th>
+                            <th style="text-align: right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="casesTableBody">
+                        <tr><td colspan="6" style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Vista Tarjetas Verticales para Celular (APK) -->
+            <div class="mobile-cards" id="mobileCardsContainer">
+                <div style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase...</div>
+            </div>
+
             <div id="emptyState" class="empty-state" style="display: none;">
                 No se encontraron registros de devoluciones.
             </div>
@@ -482,8 +499,11 @@
 
         window.renderTable = function() {
             const tbody = document.getElementById('casesTableBody');
+            const mobileContainer = document.getElementById('mobileCardsContainer');
             const search = document.getElementById('searchInput').value.toLowerCase();
+            
             tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
 
             const filtrados = window.devoluciones.filter(item => {
                 const matchSearch = item.cliente.toLowerCase().includes(search) ||
@@ -506,6 +526,7 @@
                 if (item.estado === 'Recibido') badgeClass = 'badge-recibido';
                 if (item.estado === 'Resuelto') badgeClass = 'badge-resuelto';
 
+                // 1. Render para Tabla (PC)
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
@@ -536,6 +557,34 @@
                     </td>
                 `;
                 tbody.appendChild(tr);
+
+                // 2. Render para Tarjetas Verticales (Celular / APK)
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'm-card';
+                cardDiv.innerHTML = `
+                    <div class="m-card-header">
+                        <div>
+                            <span style="font-family: monospace; font-weight: bold; color: #0A2540; font-size: 14px;">${item.codigo}</span>
+                            <div style="font-size: 11px; color: #8E8E93;">${item.fecha}</div>
+                        </div>
+                        <span class="badge ${badgeClass}">${item.estado}</span>
+                    </div>
+                    <div class="m-card-body">
+                        <div><strong>Cliente:</strong> ${item.cliente} <span style="color:#FF6B00; font-weight:600;">(Fac: ${item.factura})</span></div>
+                        <div><strong>Producto:</strong> ${item.producto}</div>
+                        <div><strong>Motivo:</strong> ${item.motivo}</div>
+                        <div><strong>Registrado por:</strong> ${item.registradoPor || 'N/D'}</div>
+                        ${item.lugarRecepcion ? `<div style="color: #0A2540; font-weight: 600; margin-top: 2px;">📍 ${item.lugarRecepcion}</div>` : ''}
+                        ${item.folioBsale ? `<div style="font-family: monospace; color: #FF6B00;">Folio Bsale: ${item.folioBsale}</div>` : ''}
+                    </div>
+                    <div class="m-card-footer">
+                        <span style="font-size: 11px; color: #8E8E93;">${item.ticketImg ? '📷 Con Ticket adjunto' : 'Sin ticket'}</span>
+                        <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px;" onclick="abrirGestion('${item.firebaseKey}')">
+                            Gestionar
+                        </button>
+                    </div>
+                `;
+                mobileContainer.appendChild(cardDiv);
             });
         }
 
