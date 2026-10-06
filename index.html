@@ -22,6 +22,8 @@
         .btn-secondary:hover { background: #D1D1D6; }
         .btn-danger { background: #FF3B30; color: white; border: none; padding: 8px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .btn-danger:hover { background: #D32F2F; }
+        .btn-dark { background: #0A2540; color: white; }
+        .btn-dark:hover { background: #133A5E; }
 
         /* Notificación Flotante */
         #toast-notification {
@@ -65,7 +67,6 @@
         .filter-btn { padding: 6px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; border: none; background: #F2F2F7; color: #8E8E93; cursor: pointer; white-space: nowrap; }
         .filter-btn.active { background: #0A2540; color: white; }
 
-        /* Contenedor Adaptativo: Tabla en PC, Tarjetas en Celular */
         .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); padding: 16px; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { background: #FAFAFC; padding: 12px 16px; font-size: 11px; font-weight: 700; color: #8E8E93; text-transform: uppercase; border-bottom: 1px solid #E5E5EA; }
@@ -76,6 +77,7 @@
         .badge-pendiente { background: #FFF3CD; color: #856404; }
         .badge-recibido { background: #CCE5FF; color: #004085; }
         .badge-resuelto { background: #D4EDDA; color: #155724; }
+        .badge-alerta { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
         .modal { background: white; border-radius: 20px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 16px; max-height: 90vh; overflow-y: auto; }
@@ -91,7 +93,6 @@
         
         .empty-state { padding: 40px; text-align: center; color: #8E8E93; font-size: 14px; }
 
-        /* Estilo de Tarjetas Móviles para que no haya scroll horizontal */
         @media (max-width: 768px) {
             .desktop-table { display: none; }
             .mobile-cards { display: flex; flex-direction: column; gap: 12px; }
@@ -107,7 +108,7 @@
 </head>
 <body>
 
-    <!-- Alerta Flotante Interactiva -->
+    <!-- Alerta Flotante -->
     <div id="toast-notification" onclick="clickAlerta()">
         <span style="font-size: 20px;">🔔</span>
         <div style="flex: 1;">
@@ -134,7 +135,11 @@
                     <p>Control de Devoluciones</p>
                 </div>
             </div>
-            <button class="btn" onclick="openModal()">+ Registrar</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="abrirReporteVisual()">📊 Reporte Gráfico</button>
+                <button class="btn btn-dark" onclick="abrirPapelera()" style="font-size: 12px; padding: 8px 12px;">🗑️ Papelera</button>
+                <button class="btn" onclick="openModal()">+ Registrar</button>
+            </div>
         </div>
     </header>
 
@@ -172,7 +177,6 @@
         </div>
 
         <div class="table-container">
-            <!-- Vista Tabla para PC -->
             <div class="desktop-table">
                 <table>
                     <thead>
@@ -191,7 +195,6 @@
                 </table>
             </div>
 
-            <!-- Vista Tarjetas Verticales para Celular (APK) -->
             <div class="mobile-cards" id="mobileCardsContainer">
                 <div style="text-align:center; color:#8E8E93; padding: 20px;">Conectando a Firebase...</div>
             </div>
@@ -339,6 +342,20 @@
         </div>
     </div>
 
+    <!-- Modal Papelera -->
+    <div class="modal-overlay" id="papeleraModal">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3>🗑️ Papelera de Reciclaje (Casos Eliminados)</h3>
+                <button class="close-btn" onclick="closePapelera()">×</button>
+            </div>
+            <div style="font-size: 13px; color: #8E8E93;">Aquí se almacenan los casos eliminados. Puedes restaurarlos o borrarlos definitivamente.</div>
+            <div id="papeleraLista" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; margin-top: 4px;">
+                <!-- Inyectado por JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para ver imagen del ticket en grande -->
     <div class="modal-overlay" id="imageModal" onclick="closeImageModal()">
         <div style="background: white; padding: 16px; border-radius: 16px; max-width: 90%; max-height: 90vh; text-align: center;">
@@ -376,9 +393,7 @@
             document.getElementById('toast-message').innerText = mensaje;
             const toast = document.getElementById('toast-notification');
             toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 6000);
+            setTimeout(() => { toast.classList.remove('show'); }, 6000);
         }
 
         window.clickAlerta = function() {
@@ -407,9 +422,9 @@
                 snapshot.forEach((childSnapshot) => {
                     const k = childSnapshot.key;
                     const d = childSnapshot.val();
-                    if (!anteriorMap[k]) {
+                    if (!anteriorMap[k] && !d.eliminado) {
                         mostrarAlerta("Nuevo Registro", `${d.cliente} (Fac: ${d.factura}) - ${d.producto}`, k);
-                    } else if (JSON.stringify(anteriorMap[k]) !== JSON.stringify(d)) {
+                    } else if (anteriorMap[k] && JSON.stringify(anteriorMap[k]) !== JSON.stringify(d) && !d.eliminado) {
                         mostrarAlerta("Cambio de Estado / Gestión", `${d.cliente} (Fac: ${d.factura}) [${d.estado}]`, k);
                     }
                 });
@@ -436,13 +451,11 @@
                     const MAX_HEIGHT = 800;
                     let width = img.width;
                     let height = img.height;
-
                     if (width > height) {
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                     } else {
                         if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                     }
-
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
@@ -474,7 +487,8 @@
                     accionTomada: '',
                     folioBsale: '',
                     ultimaGestionPor: '',
-                    ultimaNota: ''
+                    ultimaNota: '',
+                    eliminado: false
                 };
                 const newRef = push(devolucionesRef);
                 set(newRef, nuevoCaso);
@@ -482,9 +496,7 @@
             };
 
             if (fileInput.files && fileInput.files[0]) {
-                comprimirImagen(fileInput.files[0], function(base64Img) {
-                    guardarDatos(base64Img);
-                });
+                comprimirImagen(fileInput.files[0], function(base64Img) { guardarDatos(base64Img); });
             } else {
                 guardarDatos('');
             }
@@ -497,6 +509,15 @@
             window.renderTable();
         }
 
+        // Función para calcular días transcurridos y detectar si está estancado (> 3 días)
+        function esCasoDemorado(fechaStr, estado) {
+            if (estado !== 'Pendiente') return false;
+            const fechaCaso = new Date(fechaStr);
+            const hoy = new Date();
+            const diferenciaDias = (hoy - fechaCaso) / (1000 * 60 * 60 * 24);
+            return diferenciaDias > 3;
+        }
+
         window.renderTable = function() {
             const tbody = document.getElementById('casesTableBody');
             const mobileContainer = document.getElementById('mobileCardsContainer');
@@ -505,7 +526,10 @@
             tbody.innerHTML = '';
             mobileContainer.innerHTML = '';
 
-            const filtrados = window.devoluciones.filter(item => {
+            // Filtrar solo los que NO están eliminados
+            const activos = window.devoluciones.filter(item => !item.eliminado);
+
+            const filtrados = activos.filter(item => {
                 const matchSearch = item.cliente.toLowerCase().includes(search) ||
                                     item.factura.toLowerCase().includes(search) ||
                                     item.producto.toLowerCase().includes(search) ||
@@ -526,7 +550,10 @@
                 if (item.estado === 'Recibido') badgeClass = 'badge-recibido';
                 if (item.estado === 'Resuelto') badgeClass = 'badge-resuelto';
 
-                // 1. Render para Tabla (PC)
+                const demorado = esCasoDemorado(item.fecha, item.estado);
+                if (demorado) badgeClass = 'badge-alerta';
+
+                // Tabla PC
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
@@ -545,7 +572,7 @@
                         <span style="background: #F2F2F7; padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 500;">${item.motivo}</span>
                     </td>
                     <td>
-                        <span class="badge ${badgeClass}">${item.estado}</span>
+                        <span class="badge ${badgeClass}">${demorado ? '⚠️ Demorado (>3d)' : item.estado}</span>
                         ${item.lugarRecepcion ? `<div style="font-size: 11px; color: #0A2540; font-weight: 600; margin-top: 6px;">📍 ${item.lugarRecepcion}</div>` : ''}
                         ${item.accionTomada ? `<div style="font-size: 11px; color: #8E8E93; margin-top: 3px;">✔ ${item.accionTomada}</div>` : ''}
                         ${item.folioBsale ? `<div style="font-size: 11px; font-family: monospace; color: #FF6B00; margin-top: 2px;">Folio: ${item.folioBsale}</div>` : ''}
@@ -558,7 +585,7 @@
                 `;
                 tbody.appendChild(tr);
 
-                // 2. Render para Tarjetas Verticales (Celular / APK)
+                // Tarjetas Móviles
                 const cardDiv = document.createElement('div');
                 cardDiv.className = 'm-card';
                 cardDiv.innerHTML = `
@@ -567,7 +594,7 @@
                             <span style="font-family: monospace; font-weight: bold; color: #0A2540; font-size: 14px;">${item.codigo}</span>
                             <div style="font-size: 11px; color: #8E8E93;">${item.fecha}</div>
                         </div>
-                        <span class="badge ${badgeClass}">${item.estado}</span>
+                        <span class="badge ${badgeClass}">${demorado ? '⚠️ Demorado (>3d)' : item.estado}</span>
                     </div>
                     <div class="m-card-body">
                         <div><strong>Cliente:</strong> ${item.cliente} <span style="color:#FF6B00; font-weight:600;">(Fac: ${item.factura})</span></div>
@@ -578,7 +605,7 @@
                         ${item.folioBsale ? `<div style="font-family: monospace; color: #FF6B00;">Folio Bsale: ${item.folioBsale}</div>` : ''}
                     </div>
                     <div class="m-card-footer">
-                        <span style="font-size: 11px; color: #8E8E93;">${item.ticketImg ? '📷 Con Ticket adjunto' : 'Sin ticket'}</span>
+                        <span style="font-size: 11px; color: #8E8E93;">${item.ticketImg ? '📷 Con Ticket' : 'Sin ticket'}</span>
                         <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px;" onclick="abrirGestion('${item.firebaseKey}')">
                             Gestionar
                         </button>
@@ -589,10 +616,11 @@
         }
 
         window.updateStats = function() {
-            document.getElementById('stat-pendientes').innerText = window.devoluciones.filter(i => i.estado === 'Pendiente').length;
-            document.getElementById('stat-revision').innerText = window.devoluciones.filter(i => i.estado === 'Recibido').length;
-            document.getElementById('stat-resueltos').innerText = window.devoluciones.filter(i => i.estado === 'Resuelto').length;
-            document.getElementById('stat-total').innerText = window.devoluciones.length;
+            const activos = window.devoluciones.filter(i => !i.eliminado);
+            document.getElementById('stat-pendientes').innerText = activos.filter(i => i.estado === 'Pendiente').length;
+            document.getElementById('stat-revision').innerText = activos.filter(i => i.estado === 'Recibido').length;
+            document.getElementById('stat-resueltos').innerText = activos.filter(i => i.estado === 'Resuelto').length;
+            document.getElementById('stat-total').innerText = activos.length;
         }
 
         window.abrirGestion = function(key) {
@@ -640,16 +668,12 @@
             document.getElementById('imageModal').style.display = 'flex';
         }
 
-        window.closeImageModal = function() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
+        window.closeImageModal = function() { document.getElementById('imageModal').style.display = 'none'; }
 
         window.eliminarTicket = function(key) {
-            if (confirm("¿Estás seguro de que deseas eliminar la foto del ticket adjunta?")) {
+            if (confirm("¿Deseas eliminar la foto del ticket adjunta?")) {
                 const casoRef = ref(db, 'devoluciones/' + key);
-                update(casoRef, { ticketImg: '' }).then(() => {
-                    window.closeGestionModal();
-                });
+                update(casoRef, { ticketImg: '' }).then(() => { window.closeGestionModal(); });
             }
         }
 
@@ -681,7 +705,6 @@
             const ejecutarUpdate = (ticketBase64) => {
                 const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
                 const nuevoEstado = document.getElementById('nuevoEstado').value;
-                
                 const casoActual = window.devoluciones.find(i => i.firebaseKey === window.currentGestionKey);
 
                 let updates = { 
@@ -711,29 +734,195 @@
             };
 
             if (fileInput.files && fileInput.files[0]) {
-                comprimirImagen(fileInput.files[0], function(base64Img) {
-                    ejecutarUpdate(base64Img);
-                });
+                comprimirImagen(fileInput.files[0], function(base64Img) { ejecutarUpdate(base64Img); });
             } else {
                 ejecutarUpdate(null);
             }
         }
 
-        window.eliminarCaso = function() {
-            if (!window.currentGestionKey) return;
-            const password = prompt("Para eliminar este caso, introduce la contraseña de autorización:");
+        // Papelera con contraseña COLDERMAN
+        window.abrirPapelera = function() {
+            const password = prompt("Introduce la contraseña maestra para abrir la Papelera:");
             if (password === null) return;
             if (password !== "COLDERMAN") {
-                alert("Contraseña incorrecta. No se pudo eliminar el caso.");
+                alert("Contraseña incorrecta.");
                 return;
             }
 
-            if (confirm("¿Estás 100% seguro de que deseas eliminar este caso?")) {
-                const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
+            const listaDiv = document.getElementById('papeleraLista');
+            listaDiv.innerHTML = '';
+            
+            const eliminados = window.devoluciones.filter(i => i.eliminado);
+
+            if (eliminados.length === 0) {
+                listaDiv.innerHTML = `<div style="text-align: center; color: #8E8E93; padding: 30px;">La papelera está vacía.</div>`;
+            } else {
+                eliminados.forEach(item => {
+                    const row = document.createElement('div');
+                    row.style.cssText = "background: #FAFAFC; border: 1px solid #E5E5EA; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center;";
+                    row.innerHTML = `
+                        <div>
+                            <strong style="color: #0A2540; font-family: monospace;">${item.codigo}</strong> — ${item.cliente} (Fac: ${item.factura})
+                            <div style="font-size: 11px; color: #8E8E93; margin-top: 2px;">Registrado por: ${item.registradoPor || 'N/D'} | Fecha: ${item.fecha}</div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onclick="restaurarCaso('${item.firebaseKey}')">Restaurar</button>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="borrarDefinitivo('${item.firebaseKey}')">Borrar</button>
+                        </div>
+                    `;
+                    listaDiv.appendChild(row);
+                });
+            }
+
+            document.getElementById('papeleraModal').style.display = 'flex';
+        }
+
+        window.closePapelera = function() { document.getElementById('papeleraModal').style.display = 'none'; }
+
+        window.restaurarCaso = function(key) {
+            const casoRef = ref(db, 'devoluciones/' + key);
+            update(casoRef, { eliminado: false }).then(() => {
+                window.closePapelera();
+            });
+        }
+
+        window.borrarDefinitivo = function(key) {
+            if (confirm("¿Estás seguro de borrar este caso para siempre? No se podrá recuperar.")) {
+                const casoRef = ref(db, 'devoluciones/' + key);
                 remove(casoRef).then(() => {
+                    window.closePapelera();
+                });
+            }
+        }
+
+        window.eliminarCaso = function() {
+            if (!window.currentGestionKey) return;
+            const password = prompt("Para enviar este caso a la papelera, introduce la contraseña:");
+            if (password === null) return;
+            if (password !== "COLDERMAN") {
+                alert("Contraseña incorrecta.");
+                return;
+            }
+
+            if (confirm("¿Deseas enviar este caso a la papelera?")) {
+                const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
+                update(casoRef, { eliminado: true }).then(() => {
                     window.closeGestionModal();
                 });
             }
+        }
+
+        // Reporte Visual con Gráficos y Tablas Limpias
+        window.abrirReporteVisual = function() {
+            const activos = window.devoluciones.filter(i => !i.eliminado);
+            const total = activos.length;
+            const pendientes = activos.filter(i => i.estado === 'Pendiente').length;
+            const recibidos = activos.filter(i => i.estado === 'Recibido').length;
+            const resueltos = activos.filter(i => i.estado === 'Resuelto').length;
+
+            const pPend = total ? Math.round((pendientes / total) * 100) : 0;
+            const pRec = total ? Math.round((recibidos / total) * 100) : 0;
+            const pRes = total ? Math.round((resueltos / total) * 100) : 0;
+
+            let filasHtml = '';
+            activos.forEach(i => {
+                filasHtml += `
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA; font-family: monospace;">${i.codigo}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA;">${i.fecha}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA;">${i.cliente} (Fac: ${i.factura})</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA;">${i.producto}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA;">${i.motivo}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA; font-weight: bold;">${i.estado}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #E5E5EA;">${i.lugarRecepcion || 'N/D'}</td>
+                    </tr>
+                `;
+            });
+
+            const ventanaReporte = window.open('', '_blank');
+            ventanaReporte.document.write(`
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Reporte Gerencial - Colderman</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 30px; color: #1C1C1E; background: #F2F2F7; max-width: 1000px; margin: 0 auto; }
+                        h1 { color: #0A2540; font-size: 22px; margin-bottom: 4px; }
+                        .subtitle { color: #8E8E93; font-size: 13px; margin-bottom: 24px; }
+                        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+                        .card { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+                        .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #8E8E93; }
+                        .card-value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+                        .chart-box { background: white; padding: 20px; border-radius: 14px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+                        .bar-container { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 13px; }
+                        .bar-bg { flex: 1; background: #E5E5EA; border-radius: 6px; height: 16px; overflow: hidden; }
+                        .bar-fill { height: 100%; border-radius: 6px; }
+                        table { width: 100%; border-collapse: collapse; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); font-size: 13px; }
+                        th { background: #0A2540; color: white; padding: 12px 10px; text-align: left; font-size: 11px; text-transform: uppercase; }
+                        .print-btn { background: #FF6B00; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
+                        @media print { .print-btn { display: none; } body { background: white; } }
+                    </style>
+                </head>
+                <body>
+                    <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+                    <h1>COLDERMAN — Reporte de Devoluciones y Garantías</h1>
+                    <div class="subtitle">Generado el ${new Date().toLocaleDateString()} — Total de Casos Activos: ${total}</div>
+
+                    <div class="cards">
+                        <div class="card">
+                            <div class="card-title">Pendientes</div>
+                            <div class="card-value" style="color: #FF6B00;">${pendientes}</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Recibidos / Revisión</div>
+                            <div class="card-value" style="color: #007AFF;">${recibidos}</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Resueltos</div>
+                            <div class="card-value" style="color: #34C759;">${resueltos}</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-box">
+                        <h3 style="font-size: 15px; color: #0A2540; margin-bottom: 14px;">Distribución de Estados</h3>
+                        <div class="bar-container">
+                            <span style="width: 100px;">Pendientes</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: ${pPend}%; background: #FF6B00;"></div></div>
+                            <span style="width: 40px; text-align: right;">${pPend}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <span style="width: 100px;">Recibidos</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: ${pRec}%; background: #007AFF;"></div></div>
+                            <span style="width: 40px; text-align: right;">${pRec}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <span style="width: 100px;">Resueltos</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: ${pRes}%; background: #34C759;"></div></div>
+                            <span style="width: 40px; text-align: right;">${pRes}%</span>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 15px; color: #0A2540; margin-bottom: 12px;">Detalle de Casos Registrados</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Fecha</th>
+                                <th>Cliente / Factura</th>
+                                <th>Producto</th>
+                                <th>Motivo</th>
+                                <th>Estado</th>
+                                <th>Ubicación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filasHtml || '<tr><td colspan="7" style="text-align:center; padding: 20px; color:#8E8E93;">No hay casos activos.</td></tr>'}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `);
         }
     </script>
 </body>
