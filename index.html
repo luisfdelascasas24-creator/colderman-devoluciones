@@ -50,14 +50,18 @@
         }
         #toast-notification.show { transform: translateX(-50%) translateY(0); }
 
-        main { max-width: 1100px; margin: 24px auto; width: 100%; padding: 0 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        main { max-width: 1100px; margin: 20px auto; width: 100%; padding: 0 16px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-        .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04); }
-        .stat-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #8E8E93; letter-spacing: 0.5px; }
-        .stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; color: #1C1C1E; }
+        /* Cuadrícula estética 2x2 para móviles y adaptable a PC */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        .card { background: white; border-radius: 16px; padding: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-title { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #8E8E93; letter-spacing: 0.5px; }
+        .stat-value { font-size: 22px; font-weight: 700; margin-top: 4px; color: #1C1C1E; }
 
-        .toolbar { background: white; border-radius: 16px; padding: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        .toolbar { background: white; border-radius: 16px; padding: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
         .search-box { position: relative; flex: 1; min-width: 260px; }
         .search-box input { width: 100%; padding: 10px 14px 10px 38px; border-radius: 12px; border: 1px solid #E5E5EA; background: #FAFAFC; font-size: 14px; outline: none; }
         .search-box input:focus { border-color: #FF6B00; }
@@ -67,7 +71,7 @@
         .filter-btn { padding: 6px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; border: none; background: #F2F2F7; color: #8E8E93; cursor: pointer; white-space: nowrap; }
         .filter-btn.active { background: #0A2540; color: white; }
 
-        .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); padding: 16px; }
+        .table-container { background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 16px; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { background: #FAFAFC; padding: 12px 16px; font-size: 11px; font-weight: 700; color: #8E8E93; text-transform: uppercase; border-bottom: 1px solid #E5E5EA; }
         td { padding: 14px 16px; border-bottom: 1px solid #F2F2F7; font-size: 14px; vertical-align: top; }
@@ -135,22 +139,23 @@
                     <p>Control de Devoluciones</p>
                 </div>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary" onclick="abrirReporteVisual()">📊 Reporte Gráfico</button>
-                <button class="btn btn-dark" onclick="abrirPapelera()" style="font-size: 12px; padding: 8px 12px;">🗑️ Papelera</button>
-                <button class="btn" onclick="openModal()">+ Registrar</button>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" onclick="abrirReporteVisual()" style="padding: 8px 10px; font-size: 12px;">📊 Reporte</button>
+                <button class="btn btn-dark" onclick="abrirPapelera()" style="padding: 8px 10px; font-size: 12px;">🗑️ Papelera</button>
+                <button class="btn" onclick="openModal()" style="padding: 8px 12px; font-size: 13px;">+ Registrar</button>
             </div>
         </div>
     </header>
 
     <main>
+        <!-- Cuadrícula 2x2 Estética -->
         <div class="stats-grid">
             <div class="card">
-                <div class="stat-title">Pendientes de Recepción</div>
+                <div class="stat-title">Pendientes</div>
                 <div class="stat-value" id="stat-pendientes" style="color: #FF6B00;">0</div>
             </div>
             <div class="card">
-                <div class="stat-title">Recibidos / En Revisión</div>
+                <div class="stat-title">Recibidos</div>
                 <div class="stat-value" id="stat-revision" style="color: #007AFF;">0</div>
             </div>
             <div class="card">
@@ -158,7 +163,7 @@
                 <div class="stat-value" id="stat-resueltos" style="color: #34C759;">0</div>
             </div>
             <div class="card">
-                <div class="stat-title">Total Registrados</div>
+                <div class="stat-title">Total Casos</div>
                 <div class="stat-value" id="stat-total">0</div>
             </div>
         </div>
@@ -509,7 +514,6 @@
             window.renderTable();
         }
 
-        // Función para calcular días transcurridos y detectar si está estancado (> 3 días)
         function esCasoDemorado(fechaStr, estado) {
             if (estado !== 'Pendiente') return false;
             const fechaCaso = new Date(fechaStr);
@@ -526,7 +530,6 @@
             tbody.innerHTML = '';
             mobileContainer.innerHTML = '';
 
-            // Filtrar solo los que NO están eliminados
             const activos = window.devoluciones.filter(item => !item.eliminado);
 
             const filtrados = activos.filter(item => {
@@ -740,7 +743,6 @@
             }
         }
 
-        // Papelera con contraseña COLDERMAN
         window.abrirPapelera = function() {
             const password = prompt("Introduce la contraseña maestra para abrir la Papelera:");
             if (password === null) return;
@@ -781,17 +783,13 @@
 
         window.restaurarCaso = function(key) {
             const casoRef = ref(db, 'devoluciones/' + key);
-            update(casoRef, { eliminado: false }).then(() => {
-                window.closePapelera();
-            });
+            update(casoRef, { eliminado: false }).then(() => { window.closePapelera(); });
         }
 
         window.borrarDefinitivo = function(key) {
             if (confirm("¿Estás seguro de borrar este caso para siempre? No se podrá recuperar.")) {
                 const casoRef = ref(db, 'devoluciones/' + key);
-                remove(casoRef).then(() => {
-                    window.closePapelera();
-                });
+                remove(casoRef).then(() => { window.closePapelera(); });
             }
         }
 
@@ -806,13 +804,10 @@
 
             if (confirm("¿Deseas enviar este caso a la papelera?")) {
                 const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
-                update(casoRef, { eliminado: true }).then(() => {
-                    window.closeGestionModal();
-                });
+                update(casoRef, { eliminado: true }).then(() => { window.closeGestionModal(); });
             }
         }
 
-        // Reporte Visual con Gráficos y Tablas Limpias
         window.abrirReporteVisual = function() {
             const activos = window.devoluciones.filter(i => !i.eliminado);
             const total = activos.length;
