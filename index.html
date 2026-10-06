@@ -442,7 +442,6 @@
             
             const guardarDatos = (ticketBase64) => {
                 const nuevoCaso = {
-                    id: 'COL-' + Math.floor(1000 + Math.random() * 9000),
                     fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
                     cliente: document.getElementById('cliente').value,
                     factura: document.getElementById('factura').value,
@@ -551,7 +550,8 @@
             const caso = window.devoluciones.find(i => i.firebaseKey === key);
             if (!caso) return;
 
-            document.getElementById('gestionModalTitle').innerText = `Caso ${caso.id}`;
+            // Mostrar el código del producto en lugar de COL-xxxx
+            document.getElementById('gestionModalTitle').innerText = `Código: ${caso.codigo}`;
             document.getElementById('gestionModalSub').innerText = `${caso.cliente} — ${caso.producto}`;
             
             let ticketHtml = caso.ticketImg 
@@ -660,7 +660,14 @@
 
         window.eliminarCaso = function() {
             if (!window.currentGestionKey) return;
-            if (confirm("¿Estás seguro de que deseas eliminar este caso?")) {
+            const password = prompt("Para eliminar este caso, introduce la contraseña de autorización:");
+            if (password === null) return;
+            if (password !== "COLDERMAN") {
+                alert("Contraseña incorrecta. No se pudo eliminar el caso.");
+                return;
+            }
+
+            if (confirm("¿Estás 100% seguro de que deseas eliminar este caso?")) {
                 const casoRef = ref(db, 'devoluciones/' + window.currentGestionKey);
                 remove(casoRef).then(() => {
                     window.closeGestionModal();
