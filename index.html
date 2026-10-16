@@ -389,6 +389,25 @@
         const db = getDatabase(app);
         const devolucionesRef = ref(db, 'devoluciones');
 
+        // ============================================================
+        // AVISOS PUSH (OneSignal vía Cloudflare Worker)
+        // La página NO guarda ninguna clave: solo le avisa al Worker,
+        // y el Worker (que tiene la clave de OneSignal) envía el aviso
+        // a todos los celulares que tienen la app instalada.
+        // Reemplaza la URL por la que te dé Cloudflare al crear el Worker.
+        // ============================================================
+        const PUSH_WORKER_URL = "https://colderman-devoluciones-push.luisfdelascasas24.workers.dev";
+
+        function enviarPush(titulo, mensaje) {
+            try {
+                fetch(PUSH_WORKER_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ titulo: titulo, mensaje: mensaje })
+                }).catch(function () {});
+            } catch (err) { /* un fallo del aviso nunca debe impedir guardar el caso */ }
+        }
+
         window.devoluciones = [];
         window.currentFilter = 'todos';
         window.currentGestionKey = null;
@@ -500,6 +519,14 @@
                 };
                 const newRef = push(devolucionesRef);
                 set(newRef, nuevoCaso);
+
+                // Aviso al celular: caso nuevo
+                enviarPush(
+                    "Nueva devolución: " + nuevoCaso.cliente,
+                    "Fac: " + nuevoCaso.factura + " | " + nuevoCaso.producto + " (" + nuevoCaso.codigo + ")\nRegistrado por: " + nuevoCaso.registradoPor,
+                    "package"
+                );
+
                 window.closeModal();
             };
 
@@ -736,6 +763,16 @@
                 }
 
                 update(casoRef, updates);
+
+                // Aviso al celular: cambio de estado / gestión
+                if (casoActual) {
+                    enviarPush(
+                        "Caso " + nuevoEstado + ": " + casoActual.cliente,
+                        "Fac: " + casoActual.factura + " | " + casoActual.producto + "\nGestionó: " + responsable + "\n" + updates.ultimaNota,
+                        nuevoEstado === 'Resuelto' ? "white_check_mark" : "arrows_counterclockwise"
+                    );
+                }
+
                 window.closeGestionModal();
             };
 
