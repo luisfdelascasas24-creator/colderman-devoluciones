@@ -350,6 +350,65 @@
         </div>
     </div>
 
+    <!-- Modal Editar Datos del Caso (solo Elsa y Luis) -->
+    <div class="modal-overlay" id="editModal" style="z-index: 60;">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <h3>✏️ Editar datos del caso</h3>
+                    <p id="editModalSub" style="font-size: 12px; color: #8E8E93; margin-top: 2px;"></p>
+                </div>
+                <button class="close-btn" onclick="cerrarEdicion()">×</button>
+            </div>
+            <form onsubmit="guardarEdicion(event)" style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre del Cliente</label>
+                        <input type="text" id="editCliente" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nº de Factura</label>
+                        <input type="text" id="editFactura" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Código de Producto</label>
+                        <input type="text" id="editCodigo" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Repuesto</label>
+                        <input type="text" id="editProducto" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Motivo Específico</label>
+                        <select id="editMotivo">
+                            <option value="Garantía Técnica (Falla de Fábrica)">Garantía Técnica (Falla de fábrica)</option>
+                            <option value="Cambio de Compresor / Error de Cliente">Cambio de Compresor / Error de cliente</option>
+                            <option value="Cambio de Compresor / Error de Bodega">Cambio de Compresor / Error de bodega</option>
+                            <option value="Devolución por Anulación de Venta">Devolución por Anulación de Venta</option>
+                            <option value="Defecto en Mangueras / Conexiones">Defecto en Mangueras / Conexiones</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Registrado por</label>
+                        <input type="text" id="editRegistradoPor" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones / Detalles Técnicos</label>
+                    <textarea id="editObservaciones" rows="3"></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarEdicion()">Cancelar</button>
+                    <button type="submit" class="btn">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Papelera -->
     <div class="modal-overlay" id="papeleraModal">
         <div class="modal" style="max-width: 650px;">
@@ -390,11 +449,19 @@
         const devolucionesRef = ref(db, 'devoluciones');
 
         // ============================================================
+        // EDITORES AUTORIZADOS (solo ellos pueden editar un caso ya creado)
+        // Cada uno tiene su propio PIN. CAMBIA estos PIN por los tuyos.
+        // ============================================================
+        const EDITORES = {
+            "Elsa": "ELSA-1234",
+            "Luis": "LUIS-1234"
+        };
+
+        // ============================================================
         // AVISOS PUSH (OneSignal vía Cloudflare Worker)
         // La página NO guarda ninguna clave: solo le avisa al Worker,
         // y el Worker (que tiene la clave de OneSignal) envía el aviso
         // a todos los celulares que tienen la app instalada.
-        // Reemplaza la URL por la que te dé Cloudflare al crear el Worker.
         // ============================================================
         const PUSH_WORKER_URL = "https://colderman-devoluciones-push.luisfdelascasas24.workers.dev";
 
@@ -411,6 +478,7 @@
         window.devoluciones = [];
         window.currentFilter = 'todos';
         window.currentGestionKey = null;
+        window.editorActual = null;
         let isFirstLoad = true;
         let ultimoCasoModificadoKey = null;
 
@@ -671,17 +739,25 @@
                    </div>` 
                 : `<div style="color: #8E8E93; margin-top: 4px;">📷 Sin ticket o guía de envío adjunta</div>`;
 
+            const editadoHtml = caso.editadoPor
+                ? `<div style="font-size: 11px; color: #8E8E93;">✏️ Datos editados por <strong>${caso.editadoPor}</strong> el ${caso.editadoFecha || ''}</div>`
+                : '';
+
             document.getElementById('detalleCasoBox').innerHTML = `
                 <div><strong>Cliente / Fac:</strong> ${caso.cliente} (Fac: ${caso.factura})</div>
                 <div><strong>Producto:</strong> ${caso.producto} (<span style="font-family:monospace;">${caso.codigo}</span>)</div>
                 <div><strong>Creado por:</strong> ${caso.registradoPor || 'N/D'}</div>
                 <div><strong>Motivo:</strong> ${caso.motivo}</div>
                 <div><strong>Obs:</strong> ${caso.observaciones || 'Ninguna'}</div>
+                ${editadoHtml}
                 ${ticketHtml}
                 <div style="margin-top: 6px; border-top: 1px solid #E5E5EA; padding-top: 4px;">
                     <strong>Última gestión:</strong> ${caso.ultimaGestionPor ? `<span style="color:#FF6B00; font-weight:bold;">${caso.ultimaGestionPor}</span>` : 'Sin gestionar aún'}
                 </div>
                 <div><strong>Qué se hizo:</strong> ${caso.ultimaNota || 'Ninguna observación'}</div>
+                <div style="margin-top: 6px;">
+                    <button type="button" class="btn btn-dark" style="font-size: 12px; padding: 7px 12px;" onclick="abrirEdicion()">✏️ Editar datos del caso (solo Elsa y Luis)</button>
+                </div>
             `;
 
             document.getElementById('nuevoEstado').value = caso.estado;
@@ -694,6 +770,76 @@
 
             window.toggleBloqueResolucion();
             document.getElementById('gestionModal').style.display = 'flex';
+        }
+
+        // ============================================================
+        // EDICIÓN DE CASOS (solo Elsa y Luis)
+        // ============================================================
+        function pedirAutorizacionEditor() {
+            const pin = prompt("Edición restringida (solo Elsa y Luis).\nIntroduce tu PIN personal:");
+            if (pin === null) return null;
+            const nombre = Object.keys(EDITORES).find(n => EDITORES[n] === pin.trim());
+            if (!nombre) {
+                alert("PIN incorrecto. Solo Elsa y Luis pueden editar los datos de un caso.");
+                return null;
+            }
+            return nombre;
+        }
+
+        window.abrirEdicion = function() {
+            if (!window.currentGestionKey) return;
+            const caso = window.devoluciones.find(i => i.firebaseKey === window.currentGestionKey);
+            if (!caso) return;
+
+            const editor = pedirAutorizacionEditor();
+            if (!editor) return;
+            window.editorActual = editor;
+
+            document.getElementById('editModalSub').innerText = `Editando como ${editor} — Código ${caso.codigo}`;
+            document.getElementById('editCliente').value = caso.cliente || '';
+            document.getElementById('editFactura').value = caso.factura || '';
+            document.getElementById('editCodigo').value = caso.codigo || '';
+            document.getElementById('editProducto').value = caso.producto || '';
+            document.getElementById('editMotivo').value = caso.motivo || '';
+            document.getElementById('editRegistradoPor').value = caso.registradoPor || '';
+            document.getElementById('editObservaciones').value = caso.observaciones || '';
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        window.cerrarEdicion = function() {
+            document.getElementById('editModal').style.display = 'none';
+            window.editorActual = null;
+        }
+
+        window.guardarEdicion = function(e) {
+            e.preventDefault();
+            if (!window.currentGestionKey || !window.editorActual) return;
+
+            const key = window.currentGestionKey;
+            const editor = window.editorActual;
+            const casoRef = ref(db, 'devoluciones/' + key);
+
+            const cambios = {
+                cliente: document.getElementById('editCliente').value,
+                factura: document.getElementById('editFactura').value,
+                codigo: document.getElementById('editCodigo').value,
+                producto: document.getElementById('editProducto').value,
+                motivo: document.getElementById('editMotivo').value,
+                registradoPor: document.getElementById('editRegistradoPor').value,
+                observaciones: document.getElementById('editObservaciones').value,
+                editadoPor: editor,
+                editadoFecha: new Date().toISOString().replace('T', ' ').substring(0, 16)
+            };
+
+            update(casoRef, cambios).then(() => {
+                enviarPush(
+                    "Caso editado: " + cambios.cliente,
+                    "Fac: " + cambios.factura + " | " + cambios.producto + "\nEditó: " + editor
+                );
+                window.cerrarEdicion();
+                window.abrirGestion(key); // refresca el detalle con los datos nuevos
+            });
         }
 
         window.verTicket = function(base64Img) {
